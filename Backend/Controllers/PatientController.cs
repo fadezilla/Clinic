@@ -1,8 +1,10 @@
 using Backend.Models;
 using Backend.Data;
+using Backend.ControllerTools;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
+
 
 namespace Backend.Controller
 {
@@ -15,54 +17,89 @@ namespace Backend.Controller
         {
             _dataContext = dataContext;
         }
-        
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Patient>>> GetPatients()
+        public async Task<ActionResult<IEnumerable<PatientTool>>> GetPatients()
         {
-            if(_dataContext.Patients == null)
-            {
-                return NotFound();
-            }
-            return await _dataContext.Patients.ToListAsync();
+            var patient = await _dataContext.Patients
+                .Include(p => p.Appointments)
+                .Select(p => new PatientTool
+                {
+                    Id = p.Id,
+                    FirstName = p.FirstName,
+                    LastName = p.LastName,
+                    Birthdate = p.Birthdate,
+                    Email = p.Email,
+                    Appointments = p.Appointments.Select(a => new AppointmentDetails
+                    {
+                        Id = a.Id,
+                        Category = a.Category,
+                        Date = a.Date,
+                    }).ToList()
+                }).ToListAsync();
+                
+                if(patient == null)
+                {
+                    return NotFound();
+                }
+                return patient;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Patient>> GetPatient(int id)
+        public async Task<ActionResult<PatientTool>> GetPatient(int id)
         {
-            if(_dataContext.Patients == null)
-            {
-                return NotFound();
-            }
-            var patient = await _dataContext.Patients.FindAsync(id);
-            if(patient == null)
-            {
-                return NotFound();
-            }
-            return patient;
+            var patient = await _dataContext.Patients
+                .Where(p => p.Id == id)
+                .Include(p => p.Appointments)
+                .Select(p => new PatientTool
+                {
+                    Id = p.Id,
+                    FirstName = p.FirstName,
+                    LastName = p.LastName,
+                    Birthdate = p.Birthdate,
+                    Email = p.Email,
+                    Appointments = p.Appointments.Select(a => new AppointmentDetails
+                    {
+                        Id = a.Id,
+                        Category = a.Category,
+                        Date = a.Date,
+                    }).ToList()
+                }).FirstOrDefaultAsync();
+
+                if(patient == null)
+                {
+                    return NotFound();
+                }
+
+                return patient;
         }
+
         [HttpPost]
-        public async Task<ActionResult<Patient>> PostPatient(Patient patient)
+        public async Task<ActionResult<Patient>> AddPatient(Patient patient)
         {
             _dataContext.Patients.Add(patient);
             await _dataContext.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetPatient), new { id = patient.Id }, patient);
+
+            return CreatedAtAction("GetPatient", new { id = patient.Id }, patient);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<Patient>> UpdatePatient(int Id, Patient patient)
+        public async Task<ActionResult<Patient>> UpdatePatient(int id, Patient patient)
         {
-            if(Id != patient.Id)
+            if (id != patient.Id)
             {
                 return BadRequest();
             }
+
             _dataContext.Update(patient);
+
             try
             {
                 await _dataContext.SaveChangesAsync();
             }
-            catch(DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException)
             {
-                if(!PatientExists(Id))
+                if (!PatientExists(id))
                 {
                     return NotFound();
                 }
@@ -70,11 +107,10 @@ namespace Backend.Controller
             }
             return NoContent();
         }
-        private bool PatientExists(int Id)
+        private bool PatientExists(int id)
         {
-            return (_dataContext.Patients?.Any(patient => patient.Id == Id)).GetValueOrDefault();
+            return (_dataContext.Patients?.Any(patient => patient.Id == id)).GetValueOrDefault();
         }
-
         [HttpDelete("{id}")]
         public async Task<ActionResult<Patient>> DeletePatient(int id)
         {

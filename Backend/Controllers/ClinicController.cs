@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.Models;
+using Backend.ControllerTools;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,25 +17,66 @@ namespace Backend.Controller
             _dataContext = dataContext;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Clinic>>> GetClinics()
+         [HttpGet]
+        public async Task<ActionResult<IEnumerable<ClinicTool>>> GetClinics()
         {
-            if(_dataContext.Clinics == null)
+            var clinics = await _dataContext.Clinics
+                .Include(c => c.Doctors)
+                    .ThenInclude(d => d.Speciality)
+                .Include(c => c.Appointments)
+                .Select(c => new ClinicTool
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Address = c.Address,
+                    PhoneNumber = c.PhoneNumber,
+                    Doctors = c.Doctors.Select(d => new DoctorDetails
+                    {
+                        Id = d.Id,
+                        Name = d.FirstName + " " + d.LastName,
+                    }).ToList(),
+                    Appointments = c.Appointments.Select(a => new AppointmentDetails
+                    {
+                        Id = a.Id,
+                        Category = a.Category,
+                        Date = a.Date
+                    }).ToList()
+                }).ToListAsync();
+            if (clinics == null)
             {
                 return NotFound();
             }
-            return await _dataContext.Clinics.ToListAsync();
+            return clinics;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Clinic>> GetClinic(int id)
+        public async Task<ActionResult<ClinicTool>> GetClinic(int id)
         {
-            if(_dataContext.Clinics == null)
-            {
-                return NotFound();
-            }
-            var clinic = await _dataContext.Clinics.FindAsync(id);
-            if(clinic is null)
+            var clinic = await _dataContext.Clinics
+                .Where(c => c.Id == id)
+                .Include(c => c.Doctors)
+                    .ThenInclude(d => d.Speciality)
+                .Include(c => c.Appointments)
+                .Select(c => new ClinicTool
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Address = c.Address,
+                    PhoneNumber = c.PhoneNumber,
+                    Doctors = c.Doctors.Select(d => new DoctorDetails
+                    {
+                        Id = d.Id,
+                        Name = d.FirstName + " " + d.LastName,
+                    }).ToList(),
+                    Appointments = c.Appointments.Select(a => new AppointmentDetails
+                    {
+                        Id = a.Id,
+                        Category = a.Category,
+                        Date = a.Date
+                    }).ToList()
+                }).FirstOrDefaultAsync();
+
+            if(clinic == null)
             {
                 return NotFound();
             }

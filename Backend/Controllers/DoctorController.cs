@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.Models;
+using Backend.ControllerTools;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,28 +18,75 @@ namespace Backend.Controllers
             _dataContext = dataContext;
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Doctor>>> GetDoctors()
+        public async Task<ActionResult<IEnumerable<DoctorTool>>> GetDoctors()
         {
-            if(_dataContext.Doctors == null)
-            {
-                return NotFound();
-            }
-            return await _dataContext.Doctors.ToListAsync();
+            var doctors = await _dataContext.Doctors
+                .Include(d => d.Speciality)
+                .Include(d => d.Clinic)
+                .Select(d => new DoctorTool
+                {
+                    Id = d.Id,
+                    FirstName = d.FirstName,
+                    LastName = d.LastName,
+                    SpecialityId = d.Speciality.Id,
+                    SpecialityName = d.Speciality.Name,
+                    ClinicId = d.Clinic.Id,
+                    ClinicName = d.Clinic.Name
+                }).ToListAsync();
+
+            return doctors;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Doctor>> GetDoctor(int id)
+        public async Task<ActionResult<DoctorTool>> GetDoctor(int id)
         {
-            if(_dataContext.Doctors == null)
+            var doctor = await _dataContext.Doctors
+                .Where(d => d.Id == id)
+                .Include(d => d.Speciality)
+                .Include(d => d.Clinic)
+                .Select(d => new DoctorTool
+                {
+                    Id = d.Id,
+                    FirstName = d.FirstName,
+                    LastName = d.LastName,
+                    SpecialityId = d.Speciality.Id,
+                    SpecialityName = d.Speciality.Name,
+                    ClinicId = d.Clinic.Id,
+                    ClinicName = d.Clinic.Name
+                }).FirstOrDefaultAsync();
+
+                if(doctor == null)
+                {
+                    return NotFound();
+                }
+                return doctor;
+        }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<DoctorSearchResult>>> SearchDoctor(string query)
+        {
+            if (string.IsNullOrEmpty(query))
+            {
+                return BadRequest("Search query cannot be empty.");
+            }
+
+            var doctors = await _dataContext.Doctors
+                .Include(d => d.Clinic)
+                .Include(d => d.Speciality)
+                .Where(d => d.FirstName.Contains(query) || d.LastName.Contains(query))
+                .Select(d => new DoctorSearchResult
+                {
+                    FullName = d.FirstName + " " + d.LastName,
+                    ClinicName = d.Clinic.Name,
+                    SpecialityName = d.Speciality.Name
+                }).ToListAsync();
+
+            if (doctors == null || doctors.Count == 0)
             {
                 return NotFound();
             }
-            var doctor = await _dataContext.Doctors.FindAsync(id);
-            if(doctor is null)
-            {
-                return NotFound();
-            }
-            return doctor;
+
+            return Ok(doctors);
         }
 
         [HttpPut("{id}")]

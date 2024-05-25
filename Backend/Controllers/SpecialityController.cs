@@ -1,5 +1,6 @@
 using Backend.Models;
 using Backend.Data;
+using Backend.ControllerTools;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
@@ -18,28 +19,51 @@ namespace Backend.Controller
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Speciality>>> GetSpecialities()
+        public async Task<ActionResult<IEnumerable<SpecialityTool>>> GetSpecialities()
         {
-            if(_dataContext.Specialities == null)
-            {
-                return NotFound();
-            }
-            return await _dataContext.Specialities.ToListAsync();
+            var speciality = await _dataContext.Specialities
+                .Include(s => s.Doctors)
+                .Select(s => new SpecialityTool
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Doctors = s.Doctors.Select(d => new DoctorDetails
+                    {
+                        Id = d.Id,
+                        Name = d.FirstName + " " + d.LastName,
+                    }).ToList()
+                }).ToListAsync();
+
+                if(speciality == null)
+                {
+                    return NotFound();
+                }
+                return speciality;
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Speciality>> GetSpeciality(int id)
+        public async Task<ActionResult<SpecialityTool>> GetSpeciality(int id)
         {
-            if(_dataContext.Specialities == null)
-            {
-                return NotFound();
-            }
-            var speciality = await _dataContext.Specialities.FindAsync(id);
-            if(speciality == null)
-            {
-                return NotFound();
-            }
-            return speciality;
+            var speciality = await _dataContext.Specialities
+                .Where(s => s.Id == id)
+                .Include(s => s.Doctors)
+                .Select(s => new SpecialityTool
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Doctors = s.Doctors.Select(d => new DoctorDetails
+                    {
+                        Id = d.Id,
+                        Name = d.FirstName + " " + d.LastName,
+                    }).ToList()
+                }).FirstOrDefaultAsync();
+
+                if(speciality == null)
+                {
+                    return NotFound();
+                }
+
+                return speciality;
         } 
         [HttpPost]
         public async Task<ActionResult<Speciality>> AddSpeciality(Speciality speciality)
