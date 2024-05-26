@@ -17,7 +17,7 @@ namespace Backend.ControllerTools
     {
         public int Id { get; set; }
         public string Category { get; set; }
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
     }
     public class ClinicTool
     {
@@ -33,7 +33,8 @@ namespace Backend.ControllerTools
     {
         public int Id { get; set; }
         public string Category { get; set; }
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
+        public int Duration { get; set; }
         public string Patient { get; set; }
         public int PatientId { get; set; }
         public string Clinic { get; set; }
@@ -45,6 +46,7 @@ namespace Backend.ControllerTools
         public string Date { get; set; }
         public long SocialSecurityNumber { get; set; }
         public int ClinicId { get; set; }
+        public int Duration { get; set; }
         public PatientTool Patient { get; set; }
 
     }

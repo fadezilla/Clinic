@@ -4,7 +4,8 @@ namespace Backend.Models
     {
         public int Id { get; set; }
         public string Category { get; set; }
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
+        public int Duration { get; set; }
         public virtual Patient Patient{ get; set; }
         public int PatientId { get; set; }
         public virtual Clinic Clinic { get; set; }

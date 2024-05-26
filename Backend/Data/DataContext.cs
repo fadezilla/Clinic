@@ -57,6 +57,33 @@ namespace Backend.Data
                 .HasMany(c => c.Appointments)
                 .WithOne(a => a.Clinic)
                 .HasForeignKey(a => a.ClinicId);
+
+            modelBuilder.Entity<Speciality>().HasData(
+                new Speciality(1, "General Practitioner"),
+                new Speciality(2, "Dermatologist"),
+                new Speciality(3, "Cardiologist")
+            );
+
+            modelBuilder.Entity<Clinic>().HasData(
+                new Clinic(1, "Vegen", "Street1", 123456789),
+                new Clinic(2, "Medic", "Street2", 987654321),
+                new Clinic(3, "Health", "Street3", 456789123)
+            );
+
+            modelBuilder.Entity<Doctor>().HasData(
+                new Doctor { Id = 1, FirstName = "John", LastName = "Doe", SpecialityId = 1, ClinicId = 1 },
+                new Doctor { Id = 2, FirstName = "Jane", LastName = "Smith", SpecialityId = 2, ClinicId = 2 }
+            );
+
+            modelBuilder.Entity<Patient>().HasData(
+                new Patient { Id = 1, FirstName = "Alice", LastName = "Doe", Birthdate = "1990-01-01", Email = "Alice@hotmail.com"},
+                new Patient { Id = 2, FirstName = "Bob", LastName = "Smith", Birthdate = "1995-05-05", Email = "Bob@hotmail.com"}
+            );
+
+            modelBuilder.Entity<Appointment>().HasData(
+                new Appointment { Id = 1, Category = "Checkup", Date = "2021-06-01 14:00", Duration = 60, PatientId = 1, ClinicId = 1 },
+                new Appointment { Id = 2, Category = "Consultation", Date = "2021-06-02 15:00", Duration = 60, PatientId = 2, ClinicId = 2 }
+            );
         }
     }
 }

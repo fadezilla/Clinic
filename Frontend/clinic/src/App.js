@@ -4,20 +4,22 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import BookAppointment from './pages/BookAppointment';
 import SearchDoctor from './pages/SearchDoctor';
-import HomePage from './pages/HomePage';
+import { Box } from '@mui/material';
 
 const App = () => {
   return (
     <Router>
-      <Header />
-      <main>
-        <Routes>
-          <Route path='/' element={<HomePage />} />
-          <Route path='/book' element={<BookAppointment />} />
-          <Route path='/search' element={<SearchDoctor />} />
-        </Routes>
-      </main>
-      <Footer />
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <Header />
+        <Box component="main" sx={{ flex: 1 }}>
+          <Routes>
+            <Route path="/" element={<BookAppointment />} />
+            <Route path="/book" element={<BookAppointment />} />
+            <Route path="/search" element={<SearchDoctor />} />
+          </Routes>
+        </Box>
+        <Footer />
+      </Box>
     </Router>
   );
 };

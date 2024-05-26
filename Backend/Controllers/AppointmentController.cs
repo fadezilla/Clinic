@@ -42,6 +42,7 @@ namespace Backend.Controllers
                     Id = a.Id,
                     Category = a.Category,
                     Date = a.Date,
+                    Duration = a.Duration,
                     PatientId = a.PatientId,
                     ClinicId = a.ClinicId,
                     Patient = a.Patient.FirstName + " " + a.Patient.LastName,
@@ -67,6 +68,7 @@ namespace Backend.Controllers
                     Id = a.Id,
                     Category = a.Category,
                     Date = a.Date,
+                    Duration = a.Duration,
                     PatientId = a.PatientId,
                     ClinicId = a.ClinicId,
                     Patient = a.Patient.FirstName + " " + a.Patient.LastName,
@@ -79,6 +81,42 @@ namespace Backend.Controllers
             }
             return appointment;
         }
+
+        [HttpGet("availableTimes")]
+        public async Task<ActionResult<IEnumerable<string>>> GetAvailableSlots(string date, int clinicId)
+        {
+            if (!DateTime.TryParseExact(date, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime parsedDate))
+            {
+                return BadRequest("Invalid date format. Please use 'dd.MM.yyyy'.");
+            }
+
+            var startOfDay = parsedDate.AddHours(7);
+            var endOfDay = parsedDate.AddHours(20);
+
+            var existingAppointments = await _dataContext.Appointments
+                .Where(a => a.ClinicId == clinicId && a.Date.StartsWith(date))
+                .ToListAsync();
+
+            var bookedTimes = existingAppointments
+                .Select(a => DateTime.TryParseExact(a.Date, "dd.MM.yyyy HH:mm", null, System.Globalization.DateTimeStyles.None, out DateTime appointmentDate) ? appointmentDate : (DateTime?)null)
+                .Where(a => a.HasValue && a.Value.Date == parsedDate.Date)
+                .Select(a => a.Value.TimeOfDay)
+                .ToHashSet();
+
+            var availableTimes = new List<string>();
+
+            for (var time = startOfDay; time < endOfDay; time = time.AddMinutes(30))
+            {
+                if (!bookedTimes.Contains(time.TimeOfDay))
+                {
+                    availableTimes.Add(time.ToString("HH:mm"));
+                }
+            }
+
+            return Ok(availableTimes);
+        }
+
+
 
         [HttpPost]
         public async Task<ActionResult<Appointment>> AddAppointment(BookingTool dto)
@@ -107,10 +145,15 @@ namespace Backend.Controllers
                 await _dataContext.SaveChangesAsync();
             }
 
-            var appointmentEndTime = appointmentStartTime.AddHours(1);
+            var appointmentEndTime = appointmentStartTime.AddMinutes(dto.Duration);
+            var appointments = await _dataContext.Appointments
+                .Where(a => a.ClinicId == dto.ClinicId || a.PatientId == patient.Id)
+                .ToListAsync();
 
-            var conflictingAppointment = await _dataContext.Appointments
-                .AnyAsync(a => (a.ClinicId == dto.ClinicId || a.PatientId == patient.Id) && a.Date >= appointmentStartTime && a.Date < appointmentEndTime);
+            var conflictingAppointment = appointments
+                .Any(a => DateTime.TryParseExact(a.Date, "dd.MM.yyyy HH:mm", null, System.Globalization.DateTimeStyles.None, out DateTime existingAppointmentDate) &&
+                    ((existingAppointmentDate >= appointmentStartTime && existingAppointmentDate < appointmentEndTime) ||
+                    (appointmentStartTime >= existingAppointmentDate && appointmentStartTime < existingAppointmentDate.AddMinutes(dto.Duration))));
 
             if (conflictingAppointment)
             {
@@ -120,7 +163,8 @@ namespace Backend.Controllers
             var appointment = new Appointment
             {
                 Category = dto.Category,
-                Date = appointmentStartTime,
+                Date = dto.Date,
+                Duration = dto.Duration,
                 PatientId = patient.Id,
                 ClinicId = dto.ClinicId
             };
@@ -163,10 +207,14 @@ namespace Backend.Controllers
                 await _dataContext.SaveChangesAsync();
             }
 
-            var appointmentEndTime = appointmentStartTime.AddHours(1);
+             var appointmentEndTime = appointmentStartTime.AddMinutes(dto.Duration);
+            var appointments = await _dataContext.Appointments
+                .Where(a => a.ClinicId == dto.ClinicId || a.PatientId == patient.Id)
+                .ToListAsync();
 
-            var conflictingAppointment = await _dataContext.Appointments
-                .AnyAsync(a => a.Id != id && (a.ClinicId == dto.ClinicId || a.PatientId == patient.Id) && a.Date >= appointmentStartTime && a.Date < appointmentEndTime);
+            var conflictingAppointment = appointments
+                .Any(a => DateTime.TryParseExact(a.Date, "dd.MM.yyyy HH:mm", null, System.Globalization.DateTimeStyles.None, out DateTime existingAppointmentDate) &&
+                    existingAppointmentDate >= appointmentStartTime && existingAppointmentDate < appointmentEndTime);
 
             if (conflictingAppointment)
             {
@@ -174,7 +222,8 @@ namespace Backend.Controllers
             }
 
             appointment.Category = dto.Category;
-            appointment.Date = appointmentStartTime;
+            appointment.Date = dto.Date;
+            appointment.Duration = dto.Duration;
             appointment.PatientId = patient.Id;
             appointment.ClinicId = dto.ClinicId;
 

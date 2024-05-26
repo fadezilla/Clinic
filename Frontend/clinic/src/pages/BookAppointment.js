@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import {Container, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Grid, Box, CircularProgress, } from '@mui/material';
 
 const BookAppointment = () => {
     const [doctors, setDoctors] = useState([]);
@@ -10,12 +11,14 @@ const BookAppointment = () => {
         socialSecurityNumber: '',
         doctorId: '',
         date: '',
-        duration: 60,
+        time: '',
+        duration: '',
         category: '',
     });
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [availableTimes, setAvailableTimes] = useState([]);
 
     useEffect(() => {
         const fetchDoctors = async () => {
@@ -33,17 +36,34 @@ const BookAppointment = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData((prevData) => {
+            const newFormData = { ...prevData, [name]: value };
+            
+            if ((name === 'date' && newFormData.doctorId) || (name === 'doctorId' && newFormData.date)) {
+                fetchAvailableTimes(newFormData.date, newFormData.doctorId);
+            }
+            
+            return newFormData;
+        });
     };
 
-    const formatDate = (date) => {
-        const d = new Date(date);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        return `${day}.${month}.${year} ${hours}:${minutes}`;
+    const fetchAvailableTimes = async (selectedDate, doctorId) => {
+        const selectedDoctor = doctors.find(doc => doc.id === parseInt(doctorId, 10));
+        const clinicId = selectedDoctor ? selectedDoctor.clinicId : null;
+        
+        if (!selectedDate || !clinicId) return;
+
+        try {
+            const formattedDate = formatDate(selectedDate);
+            const response = await fetch(`https://localhost:7255/api/appointments/availableTimes?date=${formattedDate}&clinicId=${clinicId}`);
+            if (!response.ok) {
+                throw new Error('Failed to load available times');
+            }
+            const data = await response.json();
+            setAvailableTimes(data);
+        } catch (err) {
+            setError('Failed to load available times');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -55,14 +75,15 @@ const BookAppointment = () => {
 
         const bookingData = {
             category: formData.category,
-            date: formatDate(formData.date),
+            date: `${formatDate(formData.date)} ${formData.time}`,
             socialSecurityNumber: parseInt(formData.socialSecurityNumber, 10),
+            duration: parseInt(formData.duration, 10),
             clinicId: clinicId,
             patient: {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 birthdate: formData.birthDate,
-                email: formData.email
+                email: formData.email,
             }
         };
 
@@ -88,7 +109,8 @@ const BookAppointment = () => {
                 socialSecurityNumber: '',
                 doctorId: '',
                 date: '',
-                duration: 60,
+                time: '',
+                duration: '',
                 category: '',
             });
         } catch (err) {
@@ -98,93 +120,197 @@ const BookAppointment = () => {
         }
     };
 
+    const getMinBookingDate = () => {
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        now.setMinutes(0, 0, 0);
+        return now.toISOString().split('T')[0];
+    };
+
+   const timeOptions = () => {
+    const times = [];
+    for (let i = 7; i < 20; i++) {
+        const hour = String(i).padStart(2, '0');
+        times.push(`${hour}:00`);
+        times.push(`${hour}:30`);
+    }
+    return times;
+   }
+   
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}`;
+    };
+
+    const isTimeAvailable = (time) => {
+    return availableTimes.includes(time);
+    };
+
     return (
-        <div>
-            <h1>Book Appointment</h1>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
+        <Container component="main" maxWidth="sm">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              marginTop: 4,
+            }}
+          >
+            <Typography component="h1" variant="h5">
+              Book Appointment
+            </Typography>
+            {error && <Typography color="error">{error}</Typography>}
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
                     name="firstName"
-                    placeholder="First Name"
+                    label="First Name"
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                />
-                <input
-                    type="text"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
                     name="lastName"
-                    placeholder="Last Name"
+                    label="Last Name"
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                />
-                <input
-                    type="date"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
                     name="birthDate"
-                    placeholder="Birthdate"
+                    label="Birthdate"
+                    type="date"
                     value={formData.birthDate}
                     onChange={handleChange}
                     required
-                />
-                <input
-                    type="email"
+                    fullWidth
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
                     name="email"
-                    placeholder="Email"
+                    label="Email"
+                    type="email"
                     value={formData.email}
                     onChange={handleChange}
                     required
-                />
-                <input
-                    type="text"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
                     name="socialSecurityNumber"
-                    placeholder="Social Security Number"
+                    label="Social Security Number"
                     value={formData.socialSecurityNumber}
                     onChange={handleChange}
                     required
-                />
-                <input
-                    type="text"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
                     name="category"
-                    placeholder="Reason for appointment"
+                    label="Reason for Appointment"
                     value={formData.category}
                     onChange={handleChange}
                     required
-                />
-                <select
-                    name="doctorId"
-                    value={formData.doctorId}
-                    onChange={handleChange}
-                    required
-                >
-                    <option value="">Select Doctor</option>
-                    {doctors.map((doctor) => (
-                        <option key={doctor.id} value={doctor.id}>
-                            {doctor.firstName} {doctor.lastName}
-                        </option>
-                    ))}
-                </select>
-                <input
-                    type="datetime-local"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth required>
+                    <InputLabel>Doctor</InputLabel>
+                    <Select
+                      name="doctorId"
+                      value={formData.doctorId}
+                      onChange={handleChange}
+                      label="Doctor"
+                    >
+                      <MenuItem value="">
+                        <em>Select Doctor</em>
+                      </MenuItem>
+                      {doctors.map((doctor) => (
+                        <MenuItem key={doctor.id} value={doctor.id}>
+                          {doctor.firstName} {doctor.lastName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
                     name="date"
+                    label="Date"
+                    type="date"
                     value={formData.date}
                     onChange={handleChange}
+                    min={getMinBookingDate()}
                     required
-                />
-                <input
-                    type="number"
+                    fullWidth
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth required>
+                    <InputLabel>Time</InputLabel>
+                    <Select
+                      name="time"
+                      value={formData.time}
+                      onChange={handleChange}
+                      label="Time"
+                    >
+                      <MenuItem value="">
+                        <em>Select Time</em>
+                      </MenuItem>
+                      {timeOptions().map((time) => (
+                        <MenuItem key={time} value={time} disabled={!isTimeAvailable(time)}>
+                          {time}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
                     name="duration"
-                    placeholder="Duration (minutes)"
+                    label="Duration (minutes)"
+                    type="number"
                     value={formData.duration}
                     onChange={handleChange}
                     required
-                />
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Booking...' : 'Book Appointment'}
-                </button>
-            </form>
-        </div>
-    );
-};
-
-export default BookAppointment;
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                color="primary"
+                sx={{ mt: 3, mb: 2 }}
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={24} /> : 'Book Appointment'}
+              </Button>
+            </Box>
+          </Box>
+        </Container>
+      );
+    };
+    
+    export default BookAppointment;

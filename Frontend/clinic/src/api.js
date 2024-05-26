@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api'; // Proxy setup should handle the rest
+const API_BASE_URL = '/api';
 
 export const getDoctors = async (searchQuery) => {
   try {
