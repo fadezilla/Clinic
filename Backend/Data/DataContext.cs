@@ -58,6 +58,8 @@ namespace Backend.Data
                 .WithOne(a => a.Clinic)
                 .HasForeignKey(a => a.ClinicId);
 
+            //Dummy data
+
             modelBuilder.Entity<Speciality>().HasData(
                 new Speciality(1, "General Practitioner"),
                 new Speciality(2, "Dermatologist"),

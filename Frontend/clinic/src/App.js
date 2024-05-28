@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import BookAppointment from './pages/BookAppointment';
 import SearchDoctor from './pages/SearchDoctor';
+import Swagger from './pages/Swagger';
 import { Box } from '@mui/material';
 
 const App = () => {
@@ -16,6 +17,7 @@ const App = () => {
             <Route path="/" element={<BookAppointment />} />
             <Route path="/book" element={<BookAppointment />} />
             <Route path="/search" element={<SearchDoctor />} />
+            <Route path="/doc" element={<Swagger />} />
           </Routes>
         </Box>
         <Footer />

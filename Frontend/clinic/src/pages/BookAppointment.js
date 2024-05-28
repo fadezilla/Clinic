@@ -244,7 +244,7 @@ const BookAppointment = () => {
                       </MenuItem>
                       {doctors.map((doctor) => (
                         <MenuItem key={doctor.id} value={doctor.id}>
-                          {doctor.firstName} {doctor.lastName}
+                        {doctor.specialityName} - {doctor.firstName} {doctor.lastName} 
                         </MenuItem>
                       ))}
                     </Select>
@@ -288,7 +288,7 @@ const BookAppointment = () => {
                 <Grid item xs={12}>
                   <TextField
                     name="duration"
-                    label="Duration (minutes)"
+                    label="Duration (30 or 60 Minutes)"
                     type="number"
                     value={formData.duration}
                     onChange={handleChange}
@@ -301,8 +301,8 @@ const BookAppointment = () => {
                 type="submit"
                 fullWidth
                 variant="contained"
-                color="primary"
-                sx={{ mt: 3, mb: 2 }}
+                color='primary'
+                sx={{ mt: 3, mb: 2}}
                 disabled={loading}
               >
                 {loading ? <CircularProgress size={24} /> : 'Book Appointment'}

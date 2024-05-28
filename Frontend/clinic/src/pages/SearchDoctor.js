@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getDoctors } from '../api';
 
+
 function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [doctors, setDoctors] = useState([]);
