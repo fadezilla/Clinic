@@ -3,8 +3,6 @@ using Backend.Data;
 using Backend.ControllerTools;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Backend.Controller
 {
