@@ -76,6 +76,13 @@ namespace Backend.Controller
         [HttpPost]
         public async Task<ActionResult<Patient>> AddPatient(Patient patient)
         {
+            var existingPatient = await _dataContext.Patients.FirstOrDefaultAsync(p => p.Email == patient.Email);
+
+            if(existingPatient != null)
+            {
+                return BadRequest("Patient with this email already exists.");
+            }
+            
             _dataContext.Patients.Add(patient);
             await _dataContext.SaveChangesAsync();
 
@@ -122,6 +129,11 @@ namespace Backend.Controller
             {
                 return NotFound();
             }
+
+            if(patient.Appointments != null){
+                _dataContext.Appointments.RemoveRange(patient.Appointments);
+            }
+
             _dataContext.Patients.Remove(patient);
             await _dataContext.SaveChangesAsync();
             return NoContent();

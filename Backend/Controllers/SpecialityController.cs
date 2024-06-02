@@ -66,8 +66,17 @@ namespace Backend.Controller
         [HttpPost]
         public async Task<ActionResult<Speciality>> AddSpeciality(Speciality speciality)
         {
+
+            var existingSpeciality = await _dataContext.Specialities.FirstOrDefaultAsync(s => s.Name == speciality.Name);
+
+            if(existingSpeciality != null)
+            {
+                return BadRequest("Speciality already exists.");
+            }
+
             _dataContext.Specialities.Add(speciality);
             await _dataContext.SaveChangesAsync();
+            
             return CreatedAtAction(nameof(GetSpeciality), new { id = speciality.Id }, speciality);
         }
 

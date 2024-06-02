@@ -84,8 +84,17 @@ namespace Backend.Controller
         [HttpPost]
         public async Task<ActionResult<Clinic>> AddClinic(Clinic clinic)
         {
+
+            var existingClinic = await _dataContext.Clinics.FirstOrDefaultAsync(c => c.Name == clinic.Name || c.Address == clinic.Address || c.PhoneNumber == clinic.PhoneNumber);
+
+            if(existingClinic != null)
+            {
+                return BadRequest("A clinic with the same name, address or phone number already exists.");
+            }
+
             _dataContext.Clinics.Add(clinic);
             await _dataContext.SaveChangesAsync();
+            
             return CreatedAtAction(nameof(GetClinic), new { id = clinic.Id }, clinic);
         }
 
@@ -123,13 +132,26 @@ namespace Backend.Controller
             {
                 return NotFound();
             }
-            var clinic = await _dataContext.Clinics.FindAsync(id);
-            if(clinic is null)
+            
+            var clinic = await _dataContext.Clinics
+                .Where(c => c.Id == id)
+                .Include(c => c.Doctors)
+                .Include(c => c.Appointments)
+                .FirstOrDefaultAsync();
+
+            if(clinic == null)
             {
                 return NotFound();
             }
+
+            if(clinic.Doctors.Any() || clinic.Appointments.Any())
+            {
+                return BadRequest("Cannot delete clinic with existing doctors or appointments.");
+            }
+
             _dataContext.Clinics.Remove(clinic);
             await _dataContext.SaveChangesAsync();
+
             return NoContent();
         }
     }
