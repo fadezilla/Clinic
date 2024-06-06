@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api';
-
 export const getDoctors = async (searchQuery) => {
   try {
-      const response = await axios.get(`${API_BASE_URL}/doctor/search?query=${searchQuery}`);
+      const response = await axios.get(`/api/doctor/search?query=${searchQuery}`);
       return response.data;
   } catch (error) {
       console.error("Error fetching doctors", error);
@@ -14,7 +12,7 @@ export const getDoctors = async (searchQuery) => {
 
 export const bookAppointment = async (appointmentData) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/Appointments`, appointmentData);
+    const response = await axios.post('/api/Appointments', appointmentData);
     return response.data;
   } catch (error) {
     console.error("Error booking appointment", error);

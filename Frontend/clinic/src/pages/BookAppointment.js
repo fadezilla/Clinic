@@ -23,7 +23,7 @@ const BookAppointment = () => {
     useEffect(() => {
         const fetchDoctors = async () => {
             try {
-                const response = await fetch('https://localhost:7255/api/doctor');
+                const response = await fetch('/api/doctor');
                 const data = await response.json();
                 console.log(data);
                 setDoctors(data);
@@ -55,7 +55,7 @@ const BookAppointment = () => {
 
         try {
             const formattedDate = formatDate(selectedDate);
-            const response = await fetch(`https://localhost:7255/api/appointments/availableTimes?date=${formattedDate}&clinicId=${clinicId}`);
+            const response = await fetch(`/api/appointments/availableTimes?date=${formattedDate}&clinicId=${clinicId}`);
             if (!response.ok) {
                 throw new Error('Failed to load available times');
             }
@@ -88,7 +88,7 @@ const BookAppointment = () => {
         };
 
         try {
-            const response = await fetch('https://localhost:7255/api/appointments', {
+            const response = await fetch('/api/appointments', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
