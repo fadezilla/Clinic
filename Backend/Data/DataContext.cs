@@ -58,7 +58,7 @@ namespace Backend.Data
                 .WithOne(a => a.Clinic)
                 .HasForeignKey(a => a.ClinicId);
 
-            //Dummy data
+            //Dummy data, Delete this if you dont want any data in the Database
 
             modelBuilder.Entity<Speciality>().HasData(
                 new Speciality(1, "General Practitioner"),

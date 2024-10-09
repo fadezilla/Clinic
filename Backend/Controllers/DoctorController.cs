@@ -27,10 +27,10 @@ namespace Backend.Controllers
                     Id = d.Id,
                     FirstName = d.FirstName,
                     LastName = d.LastName,
-                    SpecialityId = d.Speciality.Id,
-                    SpecialityName = d.Speciality.Name,
-                    ClinicId = d.Clinic.Id,
-                    ClinicName = d.Clinic.Name
+                    SpecialityId = d.Speciality != null ? d.Speciality.Id : 0,
+                    SpecialityName = d.Speciality != null ? d.Speciality.Name : "No Speciality",
+                    ClinicId = d.Clinic != null ? d.Clinic.Id : 0,
+                    ClinicName = d.Clinic != null ? d.Clinic.Name : "No Clinic"
                 }).ToListAsync();
 
             return doctors;
