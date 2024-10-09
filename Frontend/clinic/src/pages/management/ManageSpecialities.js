@@ -65,7 +65,7 @@ const ManageSpecialities = () => {
     try {
       await axios.post('/api/speciality', { name: newSpeciality });
       handleClose();
-      fetchSpecialities(); // Refresh the list after adding a new speciality
+      fetchSpecialities();
     } catch (error) {
       setError('Failed to add speciality. Please ensure no duplicate entries.');
     }
@@ -116,7 +116,6 @@ const ManageSpecialities = () => {
         </TableContainer>
       )}
 
-      {/* Add New Speciality Dialog */}
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>Add New Speciality</DialogTitle>
         <DialogContent>
